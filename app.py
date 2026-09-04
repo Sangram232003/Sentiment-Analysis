@@ -4,38 +4,44 @@ import os
 
 app = Flask(__name__)
 
-# --------------------------------------------------
-# LOAD MODEL
-# --------------------------------------------------
+# =========================================================
+# LOAD MODEL + VECTORIZER
+# =========================================================
 
-MODEL_PATH = os.path.join(
-    os.path.dirname(__file__),
-    "model.pkl"
-)
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+MODEL_PATH = os.path.join(BASE_DIR, "sentiment.pkl")
+VECTORIZER_PATH = os.path.join(BASE_DIR, "vector.pkl")
 
 model = joblib.load(MODEL_PATH)
+vectorizer = joblib.load(VECTORIZER_PATH)
 
 
-# --------------------------------------------------
-# HTML + CSS + JAVASCRIPT
-# --------------------------------------------------
+# =========================================================
+# HTML
+# =========================================================
 
 HTML = """
+
 <!DOCTYPE html>
+
 <html lang="en">
 
 <head>
 
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Digital Wellness AI</title>
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0">
+
+<title>Sentiment AI Studio</title>
+
 
 <style>
 
-/* =================================================
-   GLOBAL
-================================================= */
+/* =====================================================
+   RESET
+===================================================== */
 
 * {
     margin: 0;
@@ -43,205 +49,392 @@ HTML = """
     box-sizing: border-box;
 }
 
+
+/* =====================================================
+   BODY
+===================================================== */
+
 body {
-    font-family: Arial, Helvetica, sans-serif;
+
     min-height: 100vh;
-    color: white;
+
+    font-family:
+        Inter,
+        Segoe UI,
+        Arial,
+        sans-serif;
+
+    color: #ffffff;
+
     overflow-x: hidden;
 
     background:
-        radial-gradient(circle at 10% 20%, rgba(0, 255, 200, 0.18), transparent 25%),
-        radial-gradient(circle at 90% 15%, rgba(150, 0, 255, 0.20), transparent 25%),
-        radial-gradient(circle at 50% 100%, rgba(255, 0, 100, 0.15), transparent 30%),
-        #080814;
+        radial-gradient(
+            circle at 15% 15%,
+            rgba(0, 255, 204, 0.18),
+            transparent 28%
+        ),
+
+        radial-gradient(
+            circle at 85% 20%,
+            rgba(145, 70, 255, 0.22),
+            transparent 30%
+        ),
+
+        radial-gradient(
+            circle at 50% 100%,
+            rgba(255, 45, 135, 0.16),
+            transparent 35%
+        ),
+
+        #070712;
+
 }
 
 
-/* =================================================
-   ANIMATED BACKGROUND
-================================================= */
+/* =====================================================
+   BACKGROUND GRID
+===================================================== */
 
 body::before {
+
     content: "";
+
     position: fixed;
-    width: 500px;
-    height: 500px;
 
-    background: linear-gradient(
-        135deg,
-        #00ffe1,
-        #7b2cff,
-        #ff007a
-    );
+    inset: 0;
 
-    filter: blur(150px);
+    pointer-events: none;
+
+    background-image:
+
+        linear-gradient(
+            rgba(255,255,255,0.025) 1px,
+            transparent 1px
+        ),
+
+        linear-gradient(
+            90deg,
+            rgba(255,255,255,0.025) 1px,
+            transparent 1px
+        );
+
+    background-size: 45px 45px;
+
+    mask-image:
+        linear-gradient(
+            to bottom,
+            black,
+            transparent
+        );
+
+    z-index: -5;
+
+}
+
+
+/* =====================================================
+   GLOW ORBS
+===================================================== */
+
+.orb {
+
+    position: fixed;
+
+    border-radius: 50%;
+
+    filter: blur(80px);
+
+    pointer-events: none;
+
+    z-index: -3;
+
+}
+
+
+.orb.one {
+
+    width: 280px;
+    height: 280px;
+
+    background: #00ffd5;
+
     opacity: 0.12;
 
-    top: -150px;
-    left: -100px;
+    top: -80px;
+    left: -60px;
 
-    animation: moveGlow 12s infinite alternate;
+    animation: orbOne 12s infinite alternate ease-in-out;
 
-    z-index: -2;
 }
 
-body::after {
-    content: "";
-    position: fixed;
-    width: 400px;
-    height: 400px;
 
-    background: #ff008c;
+.orb.two {
 
-    filter: blur(160px);
-    opacity: 0.10;
+    width: 320px;
+    height: 320px;
+
+    background: #8b5cf6;
+
+    opacity: 0.12;
 
     right: -100px;
+    top: 25%;
+
+    animation: orbTwo 15s infinite alternate ease-in-out;
+
+}
+
+
+.orb.three {
+
+    width: 250px;
+    height: 250px;
+
+    background: #ff2f92;
+
+    opacity: 0.10;
+
     bottom: -100px;
+    left: 35%;
 
-    animation: moveGlow2 10s infinite alternate;
-
-    z-index: -2;
-}
-
-@keyframes moveGlow {
-
-    0% {
-        transform: translate(0, 0) scale(1);
-    }
-
-    100% {
-        transform: translate(250px, 200px) scale(1.3);
-    }
+    animation: orbThree 11s infinite alternate ease-in-out;
 
 }
 
-@keyframes moveGlow2 {
 
-    0% {
+@keyframes orbOne {
+
+    from {
         transform: translate(0, 0);
     }
 
-    100% {
-        transform: translate(-200px, -150px);
+    to {
+        transform: translate(220px, 180px);
     }
 
 }
 
 
-/* =================================================
-   FLOATING PARTICLES
-================================================= */
+@keyframes orbTwo {
 
-.particles {
-    position: fixed;
-    inset: 0;
-    pointer-events: none;
-    z-index: -1;
+    from {
+        transform: translate(0, 0);
+    }
+
+    to {
+        transform: translate(-180px, 100px);
+    }
+
 }
 
+
+@keyframes orbThree {
+
+    from {
+        transform: translate(0, 0);
+    }
+
+    to {
+        transform: translate(150px, -100px);
+    }
+
+}
+
+
+/* =====================================================
+   PARTICLES
+===================================================== */
+
+.particles {
+
+    position: fixed;
+
+    inset: 0;
+
+    pointer-events: none;
+
+    z-index: -2;
+
+}
+
+
 .particle {
+
     position: absolute;
-    width: 5px;
-    height: 5px;
+
+    width: 4px;
+    height: 4px;
+
+    border-radius: 50%;
 
     background: #00ffe1;
+
+    box-shadow:
+        0 0 8px #00ffe1,
+        0 0 18px #00ffe1;
+
+    animation:
+        particleMove linear infinite;
+
+}
+
+
+@keyframes particleMove {
+
+    0% {
+
+        transform:
+            translateY(110vh)
+            scale(0.5);
+
+        opacity: 0;
+
+    }
+
+    15% {
+
+        opacity: 1;
+
+    }
+
+    85% {
+
+        opacity: 1;
+
+    }
+
+    100% {
+
+        transform:
+            translateY(-10vh)
+            scale(1.2);
+
+        opacity: 0;
+
+    }
+
+}
+
+
+/* =====================================================
+   MAIN WRAPPER
+===================================================== */
+
+.wrapper {
+
+    width: 94%;
+
+    max-width: 1050px;
+
+    margin: auto;
+
+    padding:
+        55px 0 40px;
+
+}
+
+
+/* =====================================================
+   HEADER
+===================================================== */
+
+.header {
+
+    text-align: center;
+
+    margin-bottom: 35px;
+
+}
+
+
+.status-pill {
+
+    display: inline-flex;
+
+    align-items: center;
+
+    gap: 8px;
+
+    padding:
+        8px 15px;
+
+    border-radius: 50px;
+
+    border:
+        1px solid
+        rgba(0,255,214,0.25);
+
+    background:
+        rgba(0,255,214,0.06);
+
+    color: #64ffe7;
+
+    font-size: 11px;
+
+    font-weight: 800;
+
+    letter-spacing: 2px;
+
+    margin-bottom: 18px;
+
+    box-shadow:
+        0 0 25px
+        rgba(0,255,214,0.07);
+
+}
+
+
+.status-dot {
+
+    width: 7px;
+    height: 7px;
+
+    background: #00ffd5;
 
     border-radius: 50%;
 
     box-shadow:
-        0 0 10px #00ffe1,
-        0 0 20px #00ffe1;
+        0 0 12px #00ffd5;
 
-    animation: floatParticle linear infinite;
+    animation:
+        dotPulse 1.2s infinite;
+
 }
 
-@keyframes floatParticle {
 
-    from {
-        transform: translateY(110vh);
-        opacity: 0;
-    }
+@keyframes dotPulse {
 
-    10% {
-        opacity: 1;
-    }
+    50% {
 
-    90% {
-        opacity: 1;
-    }
+        transform: scale(1.5);
 
-    to {
-        transform: translateY(-10vh);
-        opacity: 0;
+        opacity: 0.5;
+
     }
 
 }
 
-
-/* =================================================
-   MAIN CONTAINER
-================================================= */
-
-.container {
-
-    width: 94%;
-    max-width: 1200px;
-
-    margin: 40px auto;
-
-}
-
-
-/* =================================================
-   HEADER
-================================================= */
-
-.header {
-    text-align: center;
-    margin-bottom: 35px;
-}
-
-.badge {
-
-    display: inline-block;
-
-    padding: 8px 18px;
-
-    border: 1px solid rgba(0,255,225,0.5);
-
-    border-radius: 50px;
-
-    color: #00ffe1;
-
-    background: rgba(0,255,225,0.07);
-
-    box-shadow:
-        0 0 20px rgba(0,255,225,0.12);
-
-    font-size: 13px;
-
-    letter-spacing: 2px;
-
-    margin-bottom: 15px;
-
-}
 
 .header h1 {
 
-    font-size: clamp(38px, 6vw, 72px);
+    font-size:
+        clamp(42px, 7vw, 78px);
+
+    line-height: 0.95;
 
     font-weight: 900;
 
-    letter-spacing: -3px;
+    letter-spacing: -4px;
 
     background:
+
         linear-gradient(
             90deg,
-            #00ffe1,
-            #7b5cff,
-            #ff2c9c,
-            #00ffe1
+            #00ffe0,
+            #8b5cf6,
+            #ff3c9d,
+            #00ffe0
         );
 
     background-size: 300%;
@@ -250,319 +443,422 @@ body::after {
 
     -webkit-text-fill-color: transparent;
 
-    animation: gradientText 5s linear infinite;
+    animation:
+        titleGradient 6s linear infinite;
 
 }
 
-@keyframes gradientText {
 
-    0% {
-        background-position: 0%;
-    }
+@keyframes titleGradient {
 
-    100% {
-        background-position: 300%;
+    to {
+
+        background-position:
+            300%;
+
     }
 
 }
+
 
 .header p {
 
-    margin-top: 12px;
+    margin-top: 17px;
 
-    color: #aaaabe;
+    color: #9898b0;
 
-    font-size: 16px;
+    font-size: 15px;
 
 }
 
 
-/* =================================================
-   MAIN CARD
-================================================= */
+/* =====================================================
+   MAIN GLASS PANEL
+===================================================== */
 
-.main-card {
+.panel {
 
     position: relative;
 
-    padding: 30px;
+    border-radius: 30px;
 
-    border-radius: 28px;
+    padding: 32px;
 
     background:
+
         linear-gradient(
-            145deg,
-            rgba(255,255,255,0.08),
+            135deg,
+            rgba(255,255,255,0.09),
             rgba(255,255,255,0.025)
         );
 
-    border: 1px solid rgba(255,255,255,0.10);
+    border:
+        1px solid
+        rgba(255,255,255,0.10);
 
-    backdrop-filter: blur(20px);
+    backdrop-filter:
+        blur(25px);
 
-    box-shadow:
-        0 30px 100px rgba(0,0,0,0.5),
-        inset 0 1px 0 rgba(255,255,255,0.08);
-
-}
-
-
-/* =================================================
-   GRID
-================================================= */
-
-.form-grid {
-
-    display: grid;
-
-    grid-template-columns:
-        repeat(2, 1fr);
-
-    gap: 18px;
-
-}
-
-
-/* =================================================
-   INPUT CARD
-================================================= */
-
-.input-card {
-
-    padding: 18px;
-
-    border-radius: 18px;
-
-    background: rgba(8,8,25,0.65);
-
-    border: 1px solid rgba(255,255,255,0.08);
-
-    transition: 0.3s;
-
-}
-
-.input-card:hover {
-
-    transform: translateY(-4px);
-
-    border-color: rgba(0,255,225,0.45);
+    -webkit-backdrop-filter:
+        blur(25px);
 
     box-shadow:
-        0 10px 30px rgba(0,255,225,0.08);
 
-}
+        0 35px 100px
+        rgba(0,0,0,0.50),
 
-.input-card label {
+        inset
+        0 1px 0
+        rgba(255,255,255,0.08);
 
-    display: block;
-
-    font-size: 13px;
-
-    font-weight: bold;
-
-    margin-bottom: 9px;
-
-    color: #d9d9eb;
+    transition:
+        transform 0.2s ease;
 
 }
 
 
-/* =================================================
-   INPUTS
-================================================= */
+/* top glow */
 
-input,
-select {
+.panel::before {
 
-    width: 100%;
+    content: "";
 
-    padding: 13px 14px;
+    position: absolute;
 
-    border-radius: 12px;
+    top: 0;
+    left: 12%;
 
-    border: 1px solid rgba(255,255,255,0.10);
+    width: 76%;
+    height: 1px;
 
-    background: rgba(255,255,255,0.055);
+    background:
+        linear-gradient(
+            90deg,
+            transparent,
+            #00ffe0,
+            #8b5cf6,
+            #ff3c9d,
+            transparent
+        );
 
-    color: white;
+    box-shadow:
+        0 0 20px #8b5cf6;
 
-    outline: none;
+}
+
+
+/* =====================================================
+   EDITOR HEADER
+===================================================== */
+
+.editor-header {
+
+    display: flex;
+
+    justify-content:
+        space-between;
+
+    align-items: center;
+
+    margin-bottom: 15px;
+
+}
+
+
+.editor-title {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 10px;
+
+    color: #dddded;
 
     font-size: 14px;
 
-    transition: 0.3s;
+    font-weight: 700;
 
 }
 
-input:focus,
-select:focus {
 
-    border-color: #00ffe1;
+.ai-icon {
+
+    width: 30px;
+    height: 30px;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 9px;
+
+    background:
+        linear-gradient(
+            135deg,
+            #00d9bb,
+            #7655ff
+        );
 
     box-shadow:
-        0 0 0 3px rgba(0,255,225,0.08),
-        0 0 20px rgba(0,255,225,0.15);
-
-}
-
-select option {
-
-    background: #101020;
-
-    color: white;
+        0 0 18px
+        rgba(0,220,190,0.20);
 
 }
 
 
-/* =================================================
-   SPECIAL COLORS
-================================================= */
+/* =====================================================
+   TEXTAREA
+===================================================== */
 
-.input-card:nth-child(1) label {
-    color: #00ffe1;
-}
+.textarea-wrapper {
 
-.input-card:nth-child(2) label {
-    color: #ff6bd6;
-}
-
-.input-card:nth-child(3) label {
-    color: #7f9cff;
-}
-
-.input-card:nth-child(4) label {
-    color: #ffd166;
-}
-
-.input-card:nth-child(5) label {
-    color: #ff7b9c;
-}
-
-.input-card:nth-child(6) label {
-    color: #65f5a1;
-}
-
-.input-card:nth-child(7) label {
-    color: #72d8ff;
-}
-
-.input-card:nth-child(8) label {
-    color: #c084fc;
-}
-
-.input-card:nth-child(9) label {
-    color: #ff9f43;
-}
-
-.input-card:nth-child(10) label {
-    color: #00d4ff;
-}
-
-.input-card:nth-child(11) label {
-    color: #ff5c8a;
-}
-
-.input-card:nth-child(12) label {
-    color: #a78bfa;
-}
-
-.input-card:nth-child(13) label {
-    color: #34d399;
-}
-
-
-/* =================================================
-   PREDICT AREA
-================================================= */
-
-.predict-area {
-
-    text-align: center;
-
-    margin-top: 30px;
+    position: relative;
 
 }
 
 
-/* =================================================
-   PREDICT BUTTON
-================================================= */
+textarea {
+
+    width: 100%;
+
+    min-height: 260px;
+
+    resize: vertical;
+
+    padding: 25px;
+
+    border-radius: 22px;
+
+    border:
+        1px solid
+        rgba(255,255,255,0.10);
+
+    outline: none;
+
+    color: #ffffff;
+
+    background:
+
+        linear-gradient(
+            145deg,
+            rgba(5,5,18,0.85),
+            rgba(17,12,35,0.72)
+        );
+
+    font-family:
+        inherit;
+
+    font-size: 17px;
+
+    line-height: 1.7;
+
+    transition:
+        0.35s;
+
+    box-shadow:
+        inset
+        0 0 40px
+        rgba(0,0,0,0.18);
+
+}
+
+
+textarea::placeholder {
+
+    color: #66667c;
+
+}
+
+
+textarea:focus {
+
+    border-color:
+        rgba(0,255,215,0.65);
+
+    box-shadow:
+
+        0 0 0 4px
+        rgba(0,255,215,0.06),
+
+        0 0 45px
+        rgba(0,255,215,0.10),
+
+        inset
+        0 0 40px
+        rgba(0,255,215,0.025);
+
+}
+
+
+/* =====================================================
+   TEXTAREA CORNER EFFECT
+===================================================== */
+
+.corner-light {
+
+    position: absolute;
+
+    width: 65px;
+    height: 65px;
+
+    right: -1px;
+    bottom: -1px;
+
+    border-right:
+        2px solid #ff3c9d;
+
+    border-bottom:
+        2px solid #8b5cf6;
+
+    border-radius:
+        0 0 22px 0;
+
+    pointer-events: none;
+
+}
+
+
+/* =====================================================
+   CHARACTER COUNTER
+===================================================== */
+
+.editor-footer {
+
+    display: flex;
+
+    justify-content:
+        space-between;
+
+    align-items: center;
+
+    margin-top: 10px;
+
+    color: #68687d;
+
+    font-size: 12px;
+
+}
+
+
+.hint {
+
+    color: #78788d;
+
+}
+
+
+/* =====================================================
+   PREDICT BUTTON AREA
+===================================================== */
+
+.action-area {
+
+    display: flex;
+
+    justify-content:
+        center;
+
+    margin-top: 25px;
+
+}
+
 
 .predict-btn {
 
     position: relative;
 
-    width: min(100%, 430px);
+    width: 330px;
 
-    padding: 18px 35px;
+    max-width: 100%;
+
+    padding: 17px 25px;
 
     border: none;
 
     border-radius: 16px;
 
+    cursor: pointer;
+
     color: white;
 
-    font-size: 16px;
+    font-size: 14px;
 
-    font-weight: 800;
+    font-weight: 900;
 
     letter-spacing: 2px;
-
-    cursor: pointer;
 
     overflow: hidden;
 
     background:
+
         linear-gradient(
-            90deg,
-            #00c9a7,
-            #6c5ce7,
-            #ff2e93,
-            #00c9a7
+            100deg,
+            #00cdb3,
+            #7155ff,
+            #f72e91,
+            #00cdb3
         );
 
     background-size: 300%;
 
+    animation:
+        buttonGradient 5s linear infinite;
+
     box-shadow:
-        0 0 25px rgba(0,255,220,0.20),
-        0 15px 40px rgba(0,0,0,0.3);
 
-    animation: buttonGradient 5s linear infinite;
+        0 10px 35px
+        rgba(0,0,0,0.35),
 
-    transition: 0.3s;
+        0 0 25px
+        rgba(0,220,190,0.15);
+
+    transition:
+        transform 0.25s,
+        box-shadow 0.25s;
 
 }
+
 
 @keyframes buttonGradient {
 
-    0% {
-        background-position: 0%;
-    }
+    to {
 
-    100% {
-        background-position: 300%;
+        background-position:
+            300%;
+
     }
 
 }
+
 
 .predict-btn:hover {
 
-    transform: translateY(-4px) scale(1.02);
+    transform:
+        translateY(-4px)
+        scale(1.02);
 
     box-shadow:
-        0 0 35px rgba(0,255,220,0.35),
-        0 20px 50px rgba(0,0,0,0.4);
+
+        0 15px 40px
+        rgba(0,0,0,0.40),
+
+        0 0 45px
+        rgba(130,80,255,0.30);
 
 }
+
 
 .predict-btn:active {
 
-    transform: scale(0.96);
+    transform:
+        scale(0.96);
 
 }
 
 
-/* Shine effect */
+/* moving shine */
 
 .predict-btn::before {
 
@@ -571,103 +867,49 @@ select option {
     position: absolute;
 
     top: 0;
+
     left: -100%;
 
-    width: 60%;
+    width: 55%;
+
     height: 100%;
 
     background:
         linear-gradient(
-            110deg,
+            100deg,
             transparent,
             rgba(255,255,255,0.45),
             transparent
         );
 
-    transform: skewX(-20deg);
+    transform:
+        skewX(-20deg);
 
 }
+
 
 .predict-btn:hover::before {
 
-    animation: shine 0.8s;
+    animation:
+        shine 0.8s;
 
 }
+
 
 @keyframes shine {
 
-    from {
-        left: -100%;
-    }
-
     to {
-        left: 140%;
+
+        left: 150%;
+
     }
 
 }
 
 
-/* =================================================
-   LOADING EFFECT
-================================================= */
-
-.predict-btn.loading {
-
-    pointer-events: none;
-
-    animation:
-        buttonGradient 2s linear infinite,
-        pulseButton 0.8s infinite alternate;
-
-}
-
-@keyframes pulseButton {
-
-    from {
-        box-shadow:
-            0 0 20px rgba(0,255,220,0.25);
-    }
-
-    to {
-        box-shadow:
-            0 0 45px rgba(255,0,160,0.50);
-    }
-
-}
-
-.spinner {
-
-    display: inline-block;
-
-    width: 18px;
-    height: 18px;
-
-    border: 3px solid rgba(255,255,255,0.3);
-
-    border-top-color: white;
-
-    border-radius: 50%;
-
-    vertical-align: middle;
-
-    margin-right: 10px;
-
-    animation: spin 0.7s linear infinite;
-
-}
-
-@keyframes spin {
-
-    to {
-        transform: rotate(360deg);
-    }
-
-}
-
-
-/* =================================================
+/* =====================================================
    RESULT
-================================================= */
+===================================================== */
 
 .result {
 
@@ -675,33 +917,75 @@ select option {
 
     padding: 30px;
 
+    border-radius: 25px;
+
     text-align: center;
 
-    border-radius: 22px;
+    animation:
+        resultEnter
+        0.8s
+        cubic-bezier(.16,1,.3,1);
+
+}
+
+
+.positive {
+
+    border:
+        1px solid
+        rgba(0,255,150,0.35);
 
     background:
         linear-gradient(
             145deg,
-            rgba(0,255,225,0.08),
-            rgba(120,50,255,0.08)
+            rgba(0,255,150,0.10),
+            rgba(0,255,210,0.025)
         );
 
-    border: 1px solid rgba(0,255,225,0.25);
-
-    animation: resultAppear 0.8s cubic-bezier(.17,.67,.31,1.3);
+    box-shadow:
+        0 0 50px
+        rgba(0,255,150,0.08);
 
 }
 
-@keyframes resultAppear {
+
+.negative {
+
+    border:
+        1px solid
+        rgba(255,65,110,0.35);
+
+    background:
+        linear-gradient(
+            145deg,
+            rgba(255,50,100,0.10),
+            rgba(255,0,80,0.025)
+        );
+
+    box-shadow:
+        0 0 50px
+        rgba(255,50,100,0.08);
+
+}
+
+
+@keyframes resultEnter {
 
     0% {
 
         opacity: 0;
 
         transform:
-            translateY(35px)
-            scale(0.85)
-            rotateX(15deg);
+            translateY(40px)
+            scale(0.88);
+
+    }
+
+    70% {
+
+        transform:
+            translateY(-5px)
+            scale(1.02);
 
     }
 
@@ -711,19 +995,20 @@ select option {
 
         transform:
             translateY(0)
-            scale(1)
-            rotateX(0);
+            scale(1);
 
     }
 
 }
+
 
 .result-icon {
 
     width: 90px;
     height: 90px;
 
-    margin: 0 auto 18px;
+    margin:
+        0 auto 18px;
 
     display: flex;
 
@@ -733,66 +1018,196 @@ select option {
 
     border-radius: 50%;
 
-    font-size: 42px;
+    font-size: 40px;
 
-    background:
-        rgba(0,255,225,0.08);
-
-    border: 2px solid #00ffe1;
-
-    box-shadow:
-        0 0 20px rgba(0,255,225,0.25),
-        inset 0 0 25px rgba(0,255,225,0.08);
-
-    animation: iconPulse 1.5s infinite alternate;
+    animation:
+        resultPulse 1.5s
+        infinite alternate;
 
 }
 
-@keyframes iconPulse {
+
+.positive .result-icon {
+
+    background:
+        rgba(0,255,150,0.08);
+
+    border:
+        2px solid #00ff9d;
+
+    box-shadow:
+        0 0 30px
+        rgba(0,255,150,0.25);
+
+}
+
+
+.negative .result-icon {
+
+    background:
+        rgba(255,50,100,0.08);
+
+    border:
+        2px solid #ff4770;
+
+    box-shadow:
+        0 0 30px
+        rgba(255,50,100,0.25);
+
+}
+
+
+@keyframes resultPulse {
 
     from {
-        transform: scale(1);
+
+        transform:
+            scale(1);
+
     }
 
     to {
-        transform: scale(1.08);
+
+        transform:
+            scale(1.08);
+
     }
 
 }
 
+
 .result h2 {
 
-    font-size: 28px;
+    font-size: 30px;
 
     margin-bottom: 8px;
 
 }
 
+
 .result p {
 
-    color: #a9a9c0;
+    color: #a4a4b8;
 
 }
 
 
-/* =================================================
-   SCAN OVERLAY
-================================================= */
+/* =====================================================
+   CONFIDENCE BAR
+===================================================== */
 
-.scan-overlay {
+.confidence {
 
-    display: none;
+    max-width: 480px;
+
+    margin:
+        25px auto 0;
+
+    text-align: left;
+
+}
+
+
+.confidence-top {
+
+    display: flex;
+
+    justify-content:
+        space-between;
+
+    color: #85859a;
+
+    font-size: 12px;
+
+    margin-bottom: 8px;
+
+}
+
+
+.confidence-track {
+
+    height: 8px;
+
+    border-radius: 20px;
+
+    background:
+        rgba(255,255,255,0.07);
+
+    overflow: hidden;
+
+}
+
+
+.confidence-fill {
+
+    height: 100%;
+
+    border-radius: 20px;
+
+    width: {{ confidence }}%;
+
+    background:
+        linear-gradient(
+            90deg,
+            #00e0bd,
+            #8b5cf6,
+            #ff3c9d
+        );
+
+    box-shadow:
+        0 0 15px
+        rgba(120,80,255,0.5);
+
+    animation:
+        confidenceGrow
+        1.2s ease-out;
+
+}
+
+
+@keyframes confidenceGrow {
+
+    from {
+
+        width: 0;
+
+    }
+
+}
+
+
+/* =====================================================
+   FOOTER
+===================================================== */
+
+.footer {
+
+    text-align: center;
+
+    margin-top: 25px;
+
+    color: #57576d;
+
+    font-size: 11px;
+
+    letter-spacing: 1px;
+
+}
+
+
+/* =====================================================
+   SCANNING SCREEN
+===================================================== */
+
+.scan-screen {
 
     position: fixed;
 
     inset: 0;
 
-    background:
-        rgba(3,3,15,0.88);
+    z-index: 9999;
 
-    backdrop-filter: blur(8px);
-
-    z-index: 999;
+    display: none;
 
     align-items: center;
 
@@ -800,114 +1215,249 @@ select option {
 
     flex-direction: column;
 
+    background:
+        rgba(4,4,15,0.92);
+
+    backdrop-filter:
+        blur(14px);
+
 }
 
-.scan-overlay.active {
+
+.scan-screen.active {
 
     display: flex;
 
 }
 
-.scan-ring {
 
-    width: 120px;
-    height: 120px;
+.scanner {
+
+    position: relative;
+
+    width: 150px;
+    height: 150px;
 
     border-radius: 50%;
 
-    border: 2px solid rgba(0,255,225,0.2);
-
-    border-top-color: #00ffe1;
-
-    border-right-color: #ff2c9c;
+    border:
+        2px solid
+        rgba(0,255,215,0.15);
 
     box-shadow:
-        0 0 30px rgba(0,255,225,0.25);
-
-    animation:
-        scanSpin 1s linear infinite;
+        0 0 60px
+        rgba(0,255,215,0.08);
 
 }
 
-@keyframes scanSpin {
+
+.scanner::before {
+
+    content: "";
+
+    position: absolute;
+
+    inset: 12px;
+
+    border-radius: 50%;
+
+    border:
+        2px solid
+        transparent;
+
+    border-top-color:
+        #00ffe0;
+
+    border-right-color:
+        #8b5cf6;
+
+    border-bottom-color:
+        #ff3c9d;
+
+    animation:
+        scannerSpin
+        1s linear infinite;
+
+}
+
+
+.scanner::after {
+
+    content: "AI";
+
+    position: absolute;
+
+    inset: 0;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    font-weight: 900;
+
+    font-size: 28px;
+
+    color: #ffffff;
+
+    text-shadow:
+        0 0 20px
+        #00ffe0;
+
+}
+
+
+@keyframes scannerSpin {
 
     to {
-        transform: rotate(360deg);
+
+        transform:
+            rotate(360deg);
+
     }
 
 }
 
-.scan-text {
 
-    margin-top: 25px;
+.scan-line {
 
-    color: #00ffe1;
+    position: absolute;
 
-    font-size: 15px;
+    width: 170px;
 
-    font-weight: bold;
+    height: 2px;
+
+    background:
+        linear-gradient(
+            90deg,
+            transparent,
+            #00ffe0,
+            transparent
+        );
+
+    box-shadow:
+        0 0 15px
+        #00ffe0;
+
+    animation:
+        scanLine
+        1.5s
+        infinite;
+
+}
+
+
+@keyframes scanLine {
+
+    0% {
+
+        transform:
+            translateY(-85px);
+
+        opacity: 0;
+
+    }
+
+    20% {
+
+        opacity: 1;
+
+    }
+
+    80% {
+
+        opacity: 1;
+
+    }
+
+    100% {
+
+        transform:
+            translateY(85px);
+
+        opacity: 0;
+
+    }
+
+}
+
+
+.scan-title {
+
+    margin-top: 30px;
+
+    font-size: 16px;
+
+    font-weight: 900;
 
     letter-spacing: 4px;
 
-    animation: blink 0.8s infinite alternate;
+    color: #00ffe0;
 
-}
-
-@keyframes blink {
-
-    from {
-        opacity: 0.35;
-    }
-
-    to {
-        opacity: 1;
-    }
+    animation:
+        scanBlink
+        0.8s
+        infinite alternate;
 
 }
 
 
-/* =================================================
-   FOOTER
-================================================= */
+.scan-subtitle {
 
-.footer {
+    margin-top: 9px;
 
-    text-align: center;
-
-    color: #67677d;
-
-    margin-top: 25px;
+    color: #707089;
 
     font-size: 12px;
 
 }
 
 
-/* =================================================
-   MOBILE
-================================================= */
+@keyframes scanBlink {
 
-@media(max-width: 750px) {
+    from {
 
-    .container {
-
-        width: 94%;
-
-        margin: 25px auto;
+        opacity: 0.35;
 
     }
 
-    .main-card {
+    to {
+
+        opacity: 1;
+
+    }
+
+}
+
+
+/* =====================================================
+   RESPONSIVE
+===================================================== */
+
+@media(max-width: 700px) {
+
+    .wrapper {
+
+        padding-top: 30px;
+
+    }
+
+    .panel {
 
         padding: 18px;
 
-        border-radius: 20px;
+        border-radius: 22px;
 
     }
 
-    .form-grid {
+    textarea {
 
-        grid-template-columns: 1fr;
+        min-height: 230px;
+
+        padding: 18px;
+
+        font-size: 15px;
 
     }
 
@@ -917,9 +1467,13 @@ select option {
 
     }
 
-    .predict-btn {
+    .editor-footer {
 
-        width: 100%;
+        flex-direction: column;
+
+        align-items: flex-start;
+
+        gap: 5px;
 
     }
 
@@ -933,372 +1487,188 @@ select option {
 <body>
 
 
-<!-- Floating particles -->
+<!-- Background -->
+
+<div class="orb one"></div>
+<div class="orb two"></div>
+<div class="orb three"></div>
+
 
 <div class="particles">
 
-    <div class="particle" style="left:5%; animation-duration:9s;"></div>
-    <div class="particle" style="left:15%; animation-duration:12s;"></div>
-    <div class="particle" style="left:28%; animation-duration:8s;"></div>
-    <div class="particle" style="left:42%; animation-duration:14s;"></div>
-    <div class="particle" style="left:55%; animation-duration:10s;"></div>
-    <div class="particle" style="left:68%; animation-duration:13s;"></div>
-    <div class="particle" style="left:80%; animation-duration:9s;"></div>
-    <div class="particle" style="left:92%; animation-duration:15s;"></div>
+    <div class="particle"
+         style="left:5%; animation-duration:10s;"></div>
+
+    <div class="particle"
+         style="left:16%; animation-duration:14s;"></div>
+
+    <div class="particle"
+         style="left:29%; animation-duration:9s;"></div>
+
+    <div class="particle"
+         style="left:42%; animation-duration:12s;"></div>
+
+    <div class="particle"
+         style="left:56%; animation-duration:15s;"></div>
+
+    <div class="particle"
+         style="left:69%; animation-duration:10s;"></div>
+
+    <div class="particle"
+         style="left:82%; animation-duration:13s;"></div>
+
+    <div class="particle"
+         style="left:94%; animation-duration:8s;"></div>
 
 </div>
 
 
-<!-- AI scanning overlay -->
+<!-- =================================================
+     AI SCANNING SCREEN
+================================================= -->
 
-<div class="scan-overlay" id="scanOverlay">
+<div
+    class="scan-screen"
+    id="scanScreen"
+>
 
-    <div class="scan-ring"></div>
+    <div class="scanner">
 
-    <div class="scan-text">
-        AI ANALYZING PROFILE...
+        <div class="scan-line"></div>
+
+    </div>
+
+    <div class="scan-title">
+
+        AI ANALYZING SENTIMENT
+
+    </div>
+
+    <div class="scan-subtitle">
+
+        Processing your text with machine learning...
+
     </div>
 
 </div>
 
 
-<div class="container">
+<!-- =================================================
+     MAIN
+================================================= -->
+
+<div class="wrapper">
 
 
     <!-- HEADER -->
 
     <div class="header">
 
-        <div class="badge">
-            ✦ AI DIGITAL WELLNESS ENGINE
+        <div class="status-pill">
+
+            <span class="status-dot"></span>
+
+            AI SENTIMENT ENGINE ONLINE
+
         </div>
 
+
         <h1>
-            Digital Wellness AI
+
+            Sentiment<br>
+
+            AI Studio
+
         </h1>
 
+
         <p>
-            Analyze your digital lifestyle using machine learning
+
+            Transform your words into intelligent sentiment insights.
+
         </p>
 
     </div>
 
 
-    <!-- MAIN CARD -->
+    <!-- PANEL -->
 
-    <div class="main-card">
+    <div class="panel" id="panel">
+
 
         <form
             method="POST"
-            id="predictionForm"
+            id="sentimentForm"
         >
 
-            <div class="form-grid">
 
+            <div class="editor-header">
 
-                <!-- 1 -->
+                <div class="editor-title">
 
-                <div class="input-card">
+                    <div class="ai-icon">
 
-                    <label>👤 Age</label>
+                        ✦
 
-                    <input
-                        type="number"
-                        name="age"
-                        min="1"
-                        max="100"
-                        placeholder="Enter your age"
-                        required
-                    >
+                    </div>
+
+                    Review Analyzer
 
                 </div>
 
 
-                <!-- 2 -->
+                <div>
 
-                <div class="input-card">
-
-                    <label>⚧ Gender</label>
-
-                    <select name="gender" required>
-
-                        <option value="">
-                            Select gender
-                        </option>
-
-                        <option value="0">
-                            Female
-                        </option>
-
-                        <option value="1">
-                            Male
-                        </option>
-
-                    </select>
+                    NLP • ML
 
                 </div>
 
+            </div>
 
-                <!-- 3 -->
 
-                <div class="input-card">
+            <!-- TEXT INPUT -->
 
-                    <label>📱 Daily Screen Time (Hours)</label>
+            <div class="textarea-wrapper">
 
-                    <input
-                        type="number"
-                        name="daily_screen_time_hours"
-                        step="0.1"
-                        min="0"
-                        placeholder="Example: 6.5"
-                        required
-                    >
+                <textarea
+                    name="review"
+                    id="review"
+                    maxlength="5000"
+                    placeholder="Write or paste a review here...
 
-                </div>
+Example:
+The movie was absolutely amazing. I loved every moment and would definitely recommend it!"
+                    required
+                ></textarea>
 
 
-                <!-- 4 -->
+                <div class="corner-light"></div>
 
-                <div class="input-card">
+            </div>
 
-                    <label>📲 Social Media Hours</label>
 
-                    <input
-                        type="number"
-                        name="social_media_hours"
-                        step="0.1"
-                        min="0"
-                        placeholder="Example: 2.5"
-                        required
-                    >
+            <!-- EDITOR FOOTER -->
 
-                </div>
+            <div class="editor-footer">
 
+                <span class="hint">
 
-                <!-- 5 -->
+                    💡 Tip: Enter a complete review for better analysis.
 
-                <div class="input-card">
+                </span>
 
-                    <label>🎮 Gaming Hours</label>
+                <span>
 
-                    <input
-                        type="number"
-                        name="gaming_hours"
-                        step="0.1"
-                        min="0"
-                        placeholder="Example: 1.5"
-                        required
-                    >
+                    <span id="count">0</span> / 5000
 
-                </div>
-
-
-                <!-- 6 -->
-
-                <div class="input-card">
-
-                    <label>📚 Work / Study Hours</label>
-
-                    <input
-                        type="number"
-                        name="work_study_hours"
-                        step="0.1"
-                        min="0"
-                        placeholder="Example: 7"
-                        required
-                    >
-
-                </div>
-
-
-                <!-- 7 -->
-
-                <div class="input-card">
-
-                    <label>😴 Sleep Hours</label>
-
-                    <input
-                        type="number"
-                        name="sleep_hours"
-                        step="0.1"
-                        min="0"
-                        max="24"
-                        placeholder="Example: 7.5"
-                        required
-                    >
-
-                </div>
-
-
-                <!-- 8 -->
-
-                <div class="input-card">
-
-                    <label>🔔 Notifications Per Day</label>
-
-                    <input
-                        type="number"
-                        name="notifications_per_day"
-                        min="0"
-                        placeholder="Example: 80"
-                        required
-                    >
-
-                </div>
-
-
-                <!-- 9 -->
-
-                <div class="input-card">
-
-                    <label>📈 App Opens Per Day</label>
-
-                    <input
-                        type="number"
-                        name="app_opens_per_day"
-                        min="0"
-                        placeholder="Example: 60"
-                        required
-                    >
-
-                </div>
-
-
-                <!-- 10 -->
-
-                <div class="input-card">
-
-                    <label>🌐 Weekend Screen Time</label>
-
-                    <input
-                        type="number"
-                        name="weekend_screen_time"
-                        step="0.1"
-                        min="0"
-                        placeholder="Example: 8"
-                        required
-                    >
-
-                </div>
-
-
-                <!-- 11 -->
-
-                <div class="input-card">
-
-                    <label>🧠 Stress Level</label>
-
-                    <select name="stress_level" required>
-
-                        <option value="">
-                            Select level
-                        </option>
-
-                        <option value="1">
-                            1 — Very Low
-                        </option>
-
-                        <option value="2">
-                            2 — Low
-                        </option>
-
-                        <option value="3">
-                            3 — Moderate
-                        </option>
-
-                        <option value="4">
-                            4 — High
-                        </option>
-
-                        <option value="5">
-                            5 — Very High
-                        </option>
-
-                    </select>
-
-                </div>
-
-
-                <!-- 12 -->
-
-                <div class="input-card">
-
-                    <label>🎓 Academic Work Impact</label>
-
-                    <select name="academic_work_impact" required>
-
-                        <option value="">
-                            Select impact
-                        </option>
-
-                        <option value="0">
-                            0 — No Impact
-                        </option>
-
-                        <option value="1">
-                            1 — Low
-                        </option>
-
-                        <option value="2">
-                            2 — Moderate
-                        </option>
-
-                        <option value="3">
-                            3 — High
-                        </option>
-
-                        <option value="4">
-                            4 — Very High
-                        </option>
-
-                    </select>
-
-                </div>
-
-
-                <!-- 13 -->
-
-                <div class="input-card">
-
-                    <label>⚡ Addiction Level</label>
-
-                    <select name="addiction_level" required>
-
-                        <option value="">
-                            Select level
-                        </option>
-
-                        <option value="1">
-                            1 — Very Low
-                        </option>
-
-                        <option value="2">
-                            2 — Low
-                        </option>
-
-                        <option value="3">
-                            3 — Moderate
-                        </option>
-
-                        <option value="4">
-                            4 — High
-                        </option>
-
-                        <option value="5">
-                            5 — Very High
-                        </option>
-
-                    </select>
-
-                </div>
-
+                </span>
 
             </div>
 
 
             <!-- BUTTON -->
 
-            <div class="predict-area">
+            <div class="action-area">
 
                 <button
                     type="submit"
@@ -1307,7 +1677,9 @@ select option {
                 >
 
                     <span id="buttonText">
-                        ⚡ PREDICT WITH AI
+
+                        ✦ PREDICT SENTIMENT
+
                     </span>
 
                 </button>
@@ -1318,44 +1690,101 @@ select option {
         </form>
 
 
-        {% if prediction is not none %}
+        <!-- =================================================
+             RESULT
+        ================================================= -->
 
-        <div class="result">
+        {% if prediction %}
 
-            <div class="result-icon">
-
-                {% if prediction == 1 %}
-                    ⚠️
+            <div
+                class="result
+                {% if prediction == 'positive' %}
+                    positive
                 {% else %}
-                    ✨
+                    negative
+                {% endif %}"
+            >
+
+
+                <div class="result-icon">
+
+                    {% if prediction == 'positive' %}
+
+                        😊
+
+                    {% else %}
+
+                        😞
+
+                    {% endif %}
+
+                </div>
+
+
+                {% if prediction == 'positive' %}
+
+                    <h2>
+
+                        Positive Sentiment
+
+                    </h2>
+
+                    <p>
+
+                        Your review has been classified as positive.
+
+                    </p>
+
+                {% else %}
+
+                    <h2>
+
+                        Negative Sentiment
+
+                    </h2>
+
+                    <p>
+
+                        Your review has been classified as negative.
+
+                    </p>
+
                 {% endif %}
 
+
+                {% if confidence %}
+
+                    <div class="confidence">
+
+                        <div class="confidence-top">
+
+                            <span>
+
+                                AI Confidence
+
+                            </span>
+
+                            <span>
+
+                                {{ confidence }}%
+
+                            </span>
+
+                        </div>
+
+
+                        <div class="confidence-track">
+
+                            <div class="confidence-fill"></div>
+
+                        </div>
+
+                    </div>
+
+                {% endif %}
+
+
             </div>
-
-
-            {% if prediction == 1 %}
-
-                <h2>
-                    High Digital Wellness Risk
-                </h2>
-
-                <p>
-                    The model indicates a higher level of digital dependency.
-                </p>
-
-            {% else %}
-
-                <h2>
-                    Healthy Digital Pattern
-                </h2>
-
-                <p>
-                    The model indicates a healthier digital usage pattern.
-                </p>
-
-            {% endif %}
-
-        </div>
 
         {% endif %}
 
@@ -1365,7 +1794,7 @@ select option {
 
     <div class="footer">
 
-        Powered by Machine Learning • Digital Wellness AI
+        POWERED BY TF-IDF + MULTINOMIAL NAIVE BAYES
 
     </div>
 
@@ -1375,76 +1804,140 @@ select option {
 
 <script>
 
+/* =====================================================
+   CHARACTER COUNTER
+===================================================== */
 
-const form = document.getElementById("predictionForm");
+const review = document.getElementById("review");
 
-const button = document.getElementById("predictBtn");
+const count = document.getElementById("count");
 
-const buttonText = document.getElementById("buttonText");
 
-const overlay = document.getElementById("scanOverlay");
+review.addEventListener("input", function() {
+
+    count.textContent =
+        review.value.length;
+
+});
+
+
+/* =====================================================
+   PREDICT BUTTON EFFECT
+===================================================== */
+
+const form =
+    document.getElementById("sentimentForm");
+
+const button =
+    document.getElementById("predictBtn");
+
+const buttonText =
+    document.getElementById("buttonText");
+
+const scanScreen =
+    document.getElementById("scanScreen");
 
 
 form.addEventListener("submit", function() {
 
     /*
-       Show full-screen AI scanning animation
+       Full screen AI scanning effect
     */
 
-    overlay.classList.add("active");
+    scanScreen.classList.add("active");
 
 
     /*
-       Change button appearance
-    */
-
-    button.classList.add("loading");
-
-    buttonText.innerHTML =
-        '<span class="spinner"></span> AI ANALYZING...';
-
-
-    /*
-       Prevent double clicking
+       Disable button
     */
 
     button.disabled = true;
 
-});
 
+    /*
+       Change button text
+    */
 
-/*
-   Add a small interactive effect
-   when user moves mouse over the main card
-*/
+    buttonText.innerHTML =
+        "◉ ANALYZING...";
 
-const card = document.querySelector(".main-card");
-
-document.addEventListener("mousemove", function(e) {
-
-    if (!card) return;
-
-    const x =
-        (window.innerWidth / 2 - e.clientX) / 80;
-
-    const y =
-        (window.innerHeight / 2 - e.clientY) / 80;
-
-    card.style.transform =
-        `perspective(1000px)
-         rotateY(${x}deg)
-         rotateX(${y}deg)`;
 
 });
 
 
-document.addEventListener("mouseleave", function() {
+/* =====================================================
+   MOUSE PARALLAX EFFECT
+===================================================== */
 
-    card.style.transform =
-        "perspective(1000px) rotateY(0deg) rotateX(0deg)";
+const panel =
+    document.getElementById("panel");
 
-});
 
+document.addEventListener(
+    "mousemove",
+    function(event) {
+
+        if (window.innerWidth < 800) {
+            return;
+        }
+
+
+        const x =
+            (window.innerWidth / 2 -
+            event.clientX) / 100;
+
+
+        const y =
+            (window.innerHeight / 2 -
+            event.clientY) / 100;
+
+
+        panel.style.transform =
+            `perspective(1200px)
+             rotateY(${x}deg)
+             rotateX(${-y}deg)`;
+
+    }
+);
+
+
+document.addEventListener(
+    "mouseleave",
+    function() {
+
+        panel.style.transform =
+            "perspective(1200px)
+             rotateY(0deg)
+             rotateX(0deg)";
+
+    }
+);
+
+
+/* =====================================================
+   TEXTAREA GLOW
+===================================================== */
+
+review.addEventListener(
+    "focus",
+    function() {
+
+        review.style.transform =
+            "translateY(-2px)";
+
+    }
+);
+
+
+review.addEventListener(
+    "blur",
+    function() {
+
+        review.style.transform =
+            "translateY(0)";
+
+    }
+);
 
 </script>
 
@@ -1452,130 +1945,91 @@ document.addEventListener("mouseleave", function() {
 </body>
 
 </html>
+
 """
 
 
-# --------------------------------------------------
-# ROUTE
-# --------------------------------------------------
+# =========================================================
+# FLASK ROUTE
+# =========================================================
 
 @app.route("/", methods=["GET", "POST"])
 def home():
 
     prediction = None
+    confidence = None
 
     if request.method == "POST":
 
-        try:
+        review = request.form.get("review", "").strip()
 
-            # --------------------------------------
-            # GET INPUTS
-            # --------------------------------------
+        if review:
 
-            age = float(request.form["age"])
+            try:
 
-            gender = float(request.form["gender"])
+                # -----------------------------------------
+                # TRANSFORM TEXT USING TF-IDF
+                # -----------------------------------------
 
-            daily_screen_time_hours = float(
-                request.form["daily_screen_time_hours"]
-            )
-
-            social_media_hours = float(
-                request.form["social_media_hours"]
-            )
-
-            gaming_hours = float(
-                request.form["gaming_hours"]
-            )
-
-            work_study_hours = float(
-                request.form["work_study_hours"]
-            )
-
-            sleep_hours = float(
-                request.form["sleep_hours"]
-            )
-
-            notifications_per_day = float(
-                request.form["notifications_per_day"]
-            )
-
-            app_opens_per_day = float(
-                request.form["app_opens_per_day"]
-            )
-
-            weekend_screen_time = float(
-                request.form["weekend_screen_time"]
-            )
-
-            stress_level = float(
-                request.form["stress_level"]
-            )
-
-            academic_work_impact = float(
-                request.form["academic_work_impact"]
-            )
-
-            addiction_level = float(
-                request.form["addiction_level"]
-            )
+                transformed_text = vectorizer.transform(
+                    [review]
+                )
 
 
-            # --------------------------------------
-            # MODEL INPUT
-            # IMPORTANT:
-            # Keep EXACT same order as training
-            # --------------------------------------
+                # -----------------------------------------
+                # PREDICT
+                # -----------------------------------------
 
-            features = [[
-
-                age,
-                gender,
-                daily_screen_time_hours,
-                social_media_hours,
-                gaming_hours,
-                work_study_hours,
-                sleep_hours,
-                notifications_per_day,
-                app_opens_per_day,
-                weekend_screen_time,
-                stress_level,
-                academic_work_impact,
-                addiction_level
-
-            ]]
+                prediction = model.predict(
+                    transformed_text
+                )[0]
 
 
-            # --------------------------------------
-            # PREDICTION
-            # --------------------------------------
+                # -----------------------------------------
+                # CONFIDENCE
+                # -----------------------------------------
 
-            prediction = int(
-                model.predict(features)[0]
-            )
+                if hasattr(model, "predict_proba"):
+
+                    probabilities = model.predict_proba(
+                        transformed_text
+                    )[0]
+
+                    confidence = round(
+                        max(probabilities) * 100,
+                        2
+                    )
 
 
-        except Exception as e:
+                prediction = str(
+                    prediction
+                ).lower()
 
-            print("Prediction Error:", e)
 
-            prediction = None
+            except Exception as e:
+
+                print("Prediction error:", e)
+
+                prediction = None
 
 
     return render_template_string(
         HTML,
-        prediction=prediction
+        prediction=prediction,
+        confidence=confidence
     )
 
 
-# --------------------------------------------------
-# RUN APP
-# --------------------------------------------------
+# =========================================================
+# RUN
+# =========================================================
 
 if __name__ == "__main__":
 
     app.run(
         host="0.0.0.0",
-        port=int(os.environ.get("PORT", 5000)),
+        port=int(
+            os.environ.get("PORT", 5000)
+        ),
         debug=False
     )
